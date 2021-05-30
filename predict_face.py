@@ -7,16 +7,19 @@ import hashlib
 
 import numpy as np
 from operator import itemgetter
-from extract_face import detectFace, loadDataFromImagesPath, getFeaturesFromImage
+from extract_face import detectFace, getFeaturesFromImage
 
 from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
 
+import config as cfg
+
+
 ################################################################################
 # Author:         Duc Anh
-# Last modified:  29 May 2021
+# Last modified:  30 May 2021
 
 #This file contains utilities such as function to save and load Model and Pca,
 # It has 2 main functions which help register with face and login with face.
@@ -52,12 +55,12 @@ def local_db(func):
     """
     def wrapper(*args, **kwargs):
         #Switch to local db
-        db_name     = "local_db"
+        db_name     = cfg.local["BASE_DB"]
         current_dir = os.getcwd()
         db_path     = os.path.join(current_dir, db_name)
 
         if not os.path.exists(db_path):
-            os.mkdir("local_db")
+            os.mkdir(db_name)
         os.chdir(db_path)
         #Call the function inside and save the result, this is important for
         #fruitful function such as loadModelAndPCA function below
@@ -68,67 +71,6 @@ def local_db(func):
     return wrapper
 
 #Function that will have data saved into local files ===========================
-@local_db #Screen 2 method
-def saveModelAndPCA(X, y, model_filename = "SVC_model.pkl", pca_filename = "pca.pkl"):
-    '''
-    Recieves features X and label y and train the data set. It will split
-    traning/testing by ratio 80/20 by using train_test_split from sckit learn.
-    Will save these thing to local database directory.
-
-    After calling this function, it will save the model by joblib as .pkl files.
-    If .pkl files exist, it will force override these file.
-
-    Parameters:
-    ----------
-        X : np.ndarray
-            feature array extracted from the 128 x 128 face gray image extracted
-            from the original image. Each image array is flatten to a 16384
-            length array.
-        y : np.ndarray
-            the label taken from the name of each person's images directory.
-        model_filename : str
-            the file name of the training model after being trained
-        pca_filename: str
-            the file name to save the pca used for this model
-
-    Returns:
-    --------
-        None
-    '''
-
-    #Calling train test split function
-    #Increase test size to 0.3 to better recognize face
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42)
-
-    n_samples, n_features = X_train.shape
-
-    desired_n_components = 150 #After a few trial and error, I think this is a
-                                # value that's not overfit the data
-    #Keep the n_component close to 150 no matter the training size
-    #It's better to apply pca on the whole dataset
-    pca = PCA(n_components=min(n_samples - 1, desired_n_components),
-                svd_solver='randomized', whiten=True).fit(X)
-
-    #Perform grid search to search for C value. It's similar to finding best k
-    #Serach C in range 1-2 only because we are using 'rbf' kernel
-    #C can be float
-    #Not specifying gamma here because it takes long time and most of the time
-    #the best gamma is 0.001 for the training
-    param_grid = {'C' : [c for c in range(1, 15 + 1, 1)]}
-    recognizer = GridSearchCV(
-        SVC(kernel='rbf', probability=True, gamma=0.001), param_grid
-    )
-    recognizer.fit(pca.transform(X), y)
-    print(f"Best estimator: C={recognizer.best_params_}")
-
-    #Force dump new 2 files, this is needed each time a user registers
-    print("Writing model and pca......")
-    joblib.dump(recognizer.best_estimator_, model_filename)
-    joblib.dump(pca, pca_filename)
-    print("Write model and pca successfully")
-    print("Saved model as SVC_model.pkl and saved pca as pca.pkl")
-
 @local_db
 def loadModelAndPCA(model_filename, pca_filename):
     '''
@@ -154,48 +96,7 @@ def loadModelAndPCA(model_filename, pca_filename):
     pca       = joblib.load(pca_filename)
     return svc_model, pca
 
-@local_db
-def savePersonNameToDict(person_dir, name, filename="map_dir_to_person_name.json"):
-    '''
-    This function create the dictionary that map the person directory name to
-    the real name of the person. This is because the directory name must be
-    unique, but the person name can be the same for many people.
-
-    Parameters:
-    -----------
-    person_dir : str
-        The person's images directory
-    name: str
-        The name of the person
-    filename: str
-        The filename of this dict
-
-    Return:
-    --------
-    None
-
-    '''
-    #Create default key Unknown for unknown face
-    dict_ = {
-            "Unknown" : "Unknown",
-            }
-
-    if os.path.exists(filename):
-        print("Fetching name dict....")
-        with open(filename, "r") as infile:
-            data = infile.read()
-        dict_ = json.loads(data)
-    else:
-        print(f"Writing new {filename}")
-
-    #Add new mapping either having filename or not
-    print(f"This dict type is: {type(dict_)}")
-    dict_[person_dir] = name
-    with open(filename, "w") as outfile:
-        json.dump(dict_, outfile)
-    print(f"Write successfully {dict_}")
-
-@local_db #Screen 1 method
+@local_db #Screen 2 method
 def loginWithFace(store, detector, recognizer, pca):
     '''
     This function create the dictionary that map the person directory name to
@@ -293,7 +194,7 @@ def loginWithFace(store, detector, recognizer, pca):
     # os.chdir(current_dir)
     return detection_state
 
-#Screen 2 method
+@local_db #Screen 1 method
 def registerWithFace(store, name, username, detector, images_dir):
     '''
     Register user face and save it to the images_dir directory. This images_dir
@@ -357,7 +258,6 @@ def registerWithFace(store, name, username, detector, images_dir):
         #This is for direct input video capture
         #https://docs.opencv.org/3.4/d4/d15/group__videoio__flags__base.html#gga023786be1ee68a9105bf2e48c700294dab6ac3effa04f41ed5470375c85a23504
         cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-        time.sleep(2)
         print("Booting camera")
         while True:
             success, frame = cap.read()
@@ -390,10 +290,10 @@ def registerWithFace(store, name, username, detector, images_dir):
         os.chdir(current_dir)
 
         #Add this name to local dictionary
+        print(f"Loading new data and retrain from path: {images_dir}")
+        X, y = store["local_manager"].registerNewData(person_dir)
         print("Saving mapping label")
         savePersonNameToDict(person_dir, name)
-        print(f"Loading new data and retrain from path: {images_dir}")
-        X, y = loadDataFromImagesPath(detector, images_dir, confidence_threshold = 0.5, minSample = 20)
         #Save the new model
         saveModelAndPCA(X, y)
 
@@ -411,25 +311,109 @@ def registerWithFace(store, name, username, detector, images_dir):
     return True
 
 #Helpers ======================================================================
-def saveUserAfterRegister(X, y):
-    """
-    This method will save the new model and new pca after the user has
-    registered. This will be executed after the register with face process
-    is finished.
+# The save model and pca and save person to dict funcs save files into local db;
+# however, it's called by resigter with face, so that it doesn't need to add
+# @local_db wrapper
+def saveModelAndPCA(X, y, model_filename = cfg.models["MODEL_NAME"],
+    pca_filename = cfg.models["PCA_NAME"]):
+    '''
+    Recieves features X and label y and train the data set. It will split
+    traning/testing by ratio 80/20 by using train_test_split from sckit learn.
+    Will save these thing to local database directory.
 
-    Paramerters:
-        X : numpy.ndarray
-            The features loaded from the updated images file
-        y : numpy.ndarray
-            The label for the feature above
+    After calling this function, it will save the model by joblib as .pkl files.
+    If .pkl files exist, it will force override these file.
+
+    Parameters:
+    ----------
+        X : np.ndarray
+            feature array extracted from the 128 x 128 face gray image extracted
+            from the original image. Each image array is flatten to a 16384
+            length array.
+        y : np.ndarray
+            the label taken from the name of each person's images directory.
+        model_filename : str
+            the file name of the training model after being trained
+        pca_filename: str
+            the file name to save the pca used for this model
+
+    Returns:
+    --------
+        None
+    '''
+
+    #Calling train test split function
+    #Increase test size to 0.3 to better recognize face
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42)
+
+    n_samples, n_features = X_train.shape
+
+    desired_n_components = 150 #After a few trial and error, I think this is a
+                                # value that's not overfit the data
+    #Keep the n_component close to 150 no matter the training size
+    #It's better to apply pca on the whole dataset
+    pca = PCA(n_components=min(n_samples - 1, desired_n_components),
+                svd_solver='randomized', whiten=True).fit(X)
+
+    #Perform grid search to search for C value. It's similar to finding best k
+    #Serach C in range 1-2 only because we are using 'rbf' kernel
+    #C can be float
+    #Not specifying gamma here because it takes long time and most of the time
+    #the best gamma is 0.001 for the training
+    param_grid = {'C' : [c for c in range(1, 15 + 1, 1)]}
+    recognizer = GridSearchCV(
+        SVC(kernel='rbf', probability=True, gamma=0.001), param_grid
+    )
+    recognizer.fit(pca.transform(X), y)
+    print(f"Best estimator: C={recognizer.best_params_}")
+
+    #Force dump new 2 files, this is needed each time a user registers
+    print("Writing model and pca......")
+    joblib.dump(recognizer.best_estimator_, model_filename)
+    joblib.dump(pca, pca_filename)
+    print("Write model and pca successfully")
+    print(f"Saved model as {cfg.models['MODEL_NAME']}  and saved pca as {cfg.models['PCA_NAME']}")
+
+def savePersonNameToDict(person_dir, name, filename=cfg.local["MAP_DIR2NAME_FILE"]):
+    '''
+    This function create the dictionary that map the person directory name to
+    the real name of the person. This is because the directory name must be
+    unique, but the person name can be the same for many people.
+
+    Parameters:
+    -----------
+    person_dir : str
+        The person's images directory
+    name: str
+        The name of the person
+    filename: str
+        The filename of this dict
 
     Return:
-    -------
-        None
-    """
-    print("Saving model and pca after retraining")
-    saveModelAndPCA(X, y, "new_SVC_model.pkl", "new_pca.pkl")
-    print("New user saved")
+    --------
+    None
+
+    '''
+    #Create default key Unknown for unknown face
+    dict_ = {
+                "Unknown" : "Unknown",
+            }
+
+    if os.path.exists(filename):
+        print("Fetching name dict....")
+        with open(filename, "r") as infile:
+            data = infile.read()
+        dict_ = json.loads(data)
+    else:
+        print(f"Writing new {filename}")
+
+    #Add new mapping either having filename or not
+    print(f"This dict type is: {type(dict_)}")
+    dict_[person_dir] = name
+    with open(filename, "w") as outfile:
+        json.dump(dict_, outfile)
+    print(f"Write successfully {dict_}")
 
 def recognize(pca, detector, recognizer, img):
     '''
@@ -476,7 +460,7 @@ def recognize(pca, detector, recognizer, img):
     #Ignore prediction with low probability
     return (pred_label, pred_proba) if pred_proba > 70 else ("Unknown", pred_proba)
 
-def getPersonNameByDirectoryDict(filename="map_dir_to_person_name.json"):
+def getPersonNameByDirectoryDict(filename=cfg.local["MAP_DIR2NAME_FILE"]):
     '''
     This is a helper function that will be called inside login with face only.
     So that it doesn't need to be wrapped with local_db

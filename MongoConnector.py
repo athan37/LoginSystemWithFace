@@ -2,6 +2,7 @@ import pymongo
 from pymongo import MongoClient
 from User import User
 import hashlib
+import config as cfg
 #Use object id
 #https://stackoverflow.com/questions/16073865/search-by-objectid-in-mongodb-with-pymongo
 from bson.objectid import ObjectId
@@ -66,7 +67,7 @@ class MongoConnector:
             None
 
         """
-        self.client     = pymongo.MongoClient("mongodb+srv://user1:b8E7bGCO0BG7Nkay@cluster0.uqkx9.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+        self.client     = pymongo.MongoClient(cfg.mongo["MONGO_URL"])
         self.db         = self.client.DCS211
         self.collection = self.db.users
 

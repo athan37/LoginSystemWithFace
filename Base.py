@@ -2,11 +2,11 @@ import tkinter as tk
 from tkinter import ttk
 from MongoConnector import MongoConnector
 from tkinter import messagebox
-import os
 import cv2
 import threading
 import re
-
+import os
+import config as cfg
 ################################################################################
 # Class:          Base
 # Author:         Duc Anh
@@ -84,8 +84,8 @@ class Base:
         self.messagebox = messagebox
         self.store      = store
         self.connector  = store["connector"]
-        self.detector   = self.__getDetectorFromPath("face_detector")
-        self.images_dir = os.path.join(os.getcwd(), "new_faces")
+        self.detector   = store["detector"]
+        self.images_dir = os.path.join(os.getcwd(), cfg.local["BASE_DB"], cfg.local["IMG_DIR"])
         #Create frames and draw a separator for each screen
         #Draw a separator between 2 frames
         #https://stackoverflow.com/questions/42564608/why-isnt-this-ttk-separator-not-expanding-properly
@@ -103,9 +103,9 @@ class Base:
         #It's best to wait for the current thread to finish, otherwise the
         #directory will be wrong
 
-        if "retrain_thread" in self.store:
-            self.store["retrain_thread"].join()
-        os.chdir(self.store["global_dir"])
+        # if "retrain_thread" in self.store:
+        #     self.store["retrain_thread"].join()
+        # os.chdir(self.store["global_dir"])
 
 
     #A few helper methods for each screen =====================================
@@ -282,29 +282,6 @@ class Base:
         mainFrame = tk.Frame(self.store["root"], bg="#FFF")
         self.parent = mainFrame
         self.parent.grid(column=0, row=0, sticky="nsew")
-
-    def __getDetectorFromPath(self, filepath="face_detector"):
-        """
-        Load the pre-trained model from open cv dnn face detection module. It
-        will require a path that has a proto file "deploy.prototxt" and the net
-        "res10_300x300_ssd_iter_140000.caffemodel"
-
-        Params:
-        -------
-            filepath: str
-                The path to a folder that has the 2 file for this detection
-                module
-        Return:
-        -------
-            open cv dnn Net:
-                The deep learning model for face detection
-        """
-        dnn_model_dir = os.path.join(self.store["global_dir"], filepath)
-        prototxt_path = os.path.join(dnn_model_dir, "deploy.prototxt")
-        weights_path  = os.path.join(dnn_model_dir, "res10_300x300_ssd_iter_140000.caffemodel")
-        detector      = cv2.dnn.readNet(prototxt_path, weights_path)
-
-        return detector
 
     def checkCamera(self):
         #how to check if cam exits

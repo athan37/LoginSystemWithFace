@@ -34,7 +34,7 @@ Outputs: (when the user login)
 - It will show registration successfully if the information is entered correctly
 - The data is saved in the database
 - Else it will show the error
-- The face recognition may took 1-3 mins to register, so please wait for it
+- The face recognition may took 10-15 secs to register, so please wait for it
 
 For login:
 Inputs:
@@ -59,7 +59,7 @@ For add face after login:
 Inputs:
 - A short video of the user: face straight, keep the same distance
 Outputs:
-- It will say updated successfully, and the user might need to wait for 1-3 mins 
+- It will say updated successfully, and the user might need to wait for 10-15 secs
 to train the model again
 
 For logout button:
@@ -119,6 +119,21 @@ allowed. Please wait to the next day or email athan@bates.edu.
 Notes: Please don't modify the local_db directory or the new_face directory
 manually. It may produce some mismatch between the server and the local face 
 database.
+
+Set up configure file:
+In configure files for the application. We can set the name for the local directory,
+the models, or the data files here. Please keep the same file formats,
+DEFAULT_IMGS_DIR and the detector configuration. You can change the mongo
+url with your own credentials and change the name of the mongo connector
+database and collection in Mongo Connector class with your choice. 
+It should match with whatever you create in your mongo database.
+
+    Ex:
+        You Create database "DB" and collection "COLLECTION" in MONGO_DB:
+        You should change these line in MongoConnector.py to this:
+            self.client     = pymongo.MongoClient(cfg.mongo["MONGO_URL"])
+            self.db         = self.client.DB
+            self.collection = self.db.COLLECTION
 
 Link to Zoom cloud recording of narrated execution:
 ---------------------------------------------------

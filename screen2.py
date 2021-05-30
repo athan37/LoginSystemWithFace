@@ -2,7 +2,7 @@ import tkinter as tk
 from MongoConnector import MongoConnector
 from Base import Base
 from predict_face import loadModelAndPCA, loginWithFace
-
+import config as cfg
 ################################################################################
 # Class:          Screen2
 # Author:         Duc Anh
@@ -133,7 +133,8 @@ class Screen2(Base):
         if self.store["face_added"] == True and self.store["has_cam"]:
             import os
             print(os.getcwd())
-            self.recognizer, self.pca = loadModelAndPCA("SVC_model.pkl", "pca.pkl")
+            self.recognizer, self.pca = loadModelAndPCA(cfg.models["MODEL_NAME"],
+                                                        cfg.models["PCA_NAME"])
 
     def login(self, username, password):
         """

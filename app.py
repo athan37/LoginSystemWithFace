@@ -4,7 +4,9 @@ from MongoConnector import MongoConnector
 from Base import Base
 from screen1 import Screen1
 import os
-
+import cv2
+from local_manager import LocalImagesDataManager
+import config as cfg
 ################################################################################
 # Class:          App
 # Author:         Duc Anh
@@ -58,8 +60,14 @@ class App(Base):
         self.width          = 1200
         self.height         = 600
         self.root           = root
-        self.store          = {"connector": MongoConnector(), "global_dir" : os.getcwd(), "root" : self.root}
-        #The root is the to the store just in case any screen need it
+        self.detector       = self.__getDetectorFromPath()
+        self.store          = {
+            "connector"     : MongoConnector(),
+            "root"          : self.root,
+            "detector"      : self.detector,
+            "local_manager" : LocalImagesDataManager(self.detector)
+        }
+        #The root is points to the store just in case any screen need it
 
         self.root.title("App")
         self.root.geometry(f"{self.width}x{self.height}")
@@ -72,6 +80,30 @@ class App(Base):
 
         Screen1(self.mainFrame, self.store)
         print(self.store)
+
+    def __getDetectorFromPath(self, filepath=cfg.detector["PATH"]):
+        """
+        Load the pre-trained model from open cv dnn face detection module. It
+        will require a path that has a proto file "deploy.prototxt" and the net
+        "res10_300x300_ssd_iter_140000.caffemodel"
+
+        Params:
+        -------
+            filepath: str
+                The path to a folder that has the 2 file for this detection
+                module
+        Return:
+        -------
+            open cv dnn Net:
+                The deep learning model for face detection
+        """
+        dnn_model_dir = os.path.join(os.getcwd(), filepath)
+        prototxt_path = os.path.join(dnn_model_dir, cfg.detector["PROTO"])
+        weights_path  = os.path.join(dnn_model_dir, cfg.detector["WEIGHTS"])
+        detector      = cv2.dnn.readNet(prototxt_path, weights_path)
+
+        return detector
+
 
 if __name__ == "__main__":
     root = tk.Tk()

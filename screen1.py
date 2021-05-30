@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from Base import Base
 from operator import itemgetter
-from predict_face import registerWithFace, saveUserAfterRegister
+from predict_face import registerWithFace
 
 ################################################################################
 # Class:          Screen1
@@ -313,15 +313,15 @@ class Screen1(Base):
         if not self.checkNullFields(None, name = name, username = username, password = password):
             return
 
-        if not self.checkCapitalizeName(name):
-            self.messagebox.showerror("Enter a valid name",
-                f"Name must have white space and capitalized")
-            return
-
-        if not self.check8CharsAnd1Num(password):
-            self.messagebox.showerror("Weak password",
-                f"Password must have at least 8 char and have digits")
-            return
+        # if not self.checkCapitalizeName(name):
+        #     self.messagebox.showerror("Enter a valid name",
+        #         f"Name must have white space and capitalized")
+        #     return
+        #
+        # if not self.check8CharsAnd1Num(password):
+        #     self.messagebox.showerror("Weak password",
+        #         f"Password must have at least 8 char and have digits")
+        #     return
 
         #Check if password match the confirm password
         if self.register_password_field.get() != self.register_confirm_field.get():
