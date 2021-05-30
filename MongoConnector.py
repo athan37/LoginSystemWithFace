@@ -22,10 +22,6 @@ class MongoConnector:
     This class is the connector between the app and the mongo db database. It
     performs basic CRUD operation to the database to add information about users
 
-    This data base is set up by the credientials:
-    username: conaf67136@o3live.com
-    password: 3gGz;p@@3sjSm26
-
     Can access the database via
     user1 --> <user>
     b8E7bGCO0BG7Nkay --> <password>
