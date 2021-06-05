@@ -94,7 +94,7 @@ requests
 
 Instructions for executing the project:
 ---------------------------------------
-The face_detector directory contains 2 important files for face detection which
+The default_faces directory contains 2 important files for face detection which
 come from opencv dnn module. The app will load 2 files from that directory to
 create a detector object.
 
