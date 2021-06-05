@@ -101,7 +101,7 @@ create a detector object.
 This app needs a good internet connection otherwise something weird will happen
 during the register process. 
 
-The new_faces directory will always have some images there, about 250. That 
+The default_faces directory will always have some images there, about 250. That 
 directory is used to help the model to have enough data to train. All of that 
 data comes from the caltech dataset: http://www.vision.caltech.edu/Image_Datasets/faces/.
 
@@ -116,7 +116,7 @@ If the app tooks too long to response (10-20 second freeze) except for face regi
 it might be due to the database server, either it is down or the access from new ip is not
 allowed. Please wait to the next day or email athan@bates.edu.
 
-Notes: Please don't modify the local_db directory or the new_face directory
+Notes: Please don't modify the local_db directory or the default_faces directory
 manually. It may produce some mismatch between the server and the local face 
 database.
 
